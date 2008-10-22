@@ -122,24 +122,26 @@ static char MAKVONotificationHelperMagicContext;
 
 - (void)addObserver:(id)observer object:(id)target keyPath:(NSString *)keyPath selector:(SEL)selector userInfo: (id)userInfo options: (NSKeyValueObservingOptions)options
 {
+	_MAKVONotificationHelper *helper = [[_MAKVONotificationHelper alloc] initWithObserver:observer object:target keyPath:keyPath selector:selector userInfo:userInfo options:options];
+	id key = [self _dictionaryKeyForObserver:observer object:target keyPath:keyPath selector:selector];
 	@synchronized(self)
 	{
-		_MAKVONotificationHelper *helper = [[_MAKVONotificationHelper alloc] initWithObserver:observer object:target keyPath:keyPath selector:selector userInfo:userInfo options:options];
-		id key = [self _dictionaryKeyForObserver:observer object:target keyPath:keyPath selector:selector];
 		[_observerHelpers setObject:helper forKey:key];
-		[helper release];
 	}
+	[helper release];
 }
 
 - (void)removeObserver:(id)observer object:(id)target keyPath:(NSString *)keyPath selector:(SEL)selector
 {
+	id key = [self _dictionaryKeyForObserver:observer object:target keyPath:keyPath selector:selector];
+	_MAKVONotificationHelper *helper = nil;
 	@synchronized(self)
 	{
-		id key = [self _dictionaryKeyForObserver:observer object:target keyPath:keyPath selector:selector];
-		_MAKVONotificationHelper *helper = [_observerHelpers objectForKey:key];
-		[helper deregister];
+		helper = [[_observerHelpers objectForKey:key] retain];
 		[_observerHelpers removeObjectForKey:key];
 	}
+	[helper deregister];
+	[helper release];
 }
 
 @end

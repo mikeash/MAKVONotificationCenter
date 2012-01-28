@@ -84,18 +84,22 @@ static char MAKVONotificationHelperMagicContext;
 
 + (id)defaultCenter
 {
-	static MAKVONotificationCenter *center = nil;
-	if(!center)
-	{
-		// do a bit of clever atomic setting to make this thread safe
-		// if two threads try to set simultaneously, one will fail
-		// and the other will set things up so that the failing thread
-		// gets the shared center
-		MAKVONotificationCenter *newCenter = [[self alloc] init];
-		if(!OSAtomicCompareAndSwapPtrBarrier(nil, newCenter, (void *)&center))
-			[newCenter release];
-	}
+	static MAKVONotificationCenter *center;
+    static dispatch_once_t center_once_token;
+    dispatch_once(&center_once_token, ^{
+        center = [[MAKVONotificationCenter alloc] init];
+    });
 	return center;
+}
+
++ (dispatch_queue_t)defaultQueue
+{
+    static dispatch_queue_t makvo_serial_queue;
+    static dispatch_once_t makvo_serial_queue_once_token;
+    dispatch_once(&makvo_serial_queue_once_token, ^{
+         makvo_serial_queue = dispatch_queue_create("com.mikeash.makvonotificationcenter", 0);
+    });
+    return makvo_serial_queue;
 }
 
 - (id)init
@@ -122,24 +126,23 @@ static char MAKVONotificationHelperMagicContext;
 
 - (void)addObserver:(id)observer object:(id)target keyPath:(NSString *)keyPath selector:(SEL)selector userInfo: (id)userInfo options: (NSKeyValueObservingOptions)options
 {
+    
 	_MAKVONotificationHelper *helper = [[_MAKVONotificationHelper alloc] initWithObserver:observer object:target keyPath:keyPath selector:selector userInfo:userInfo options:options];
 	id key = [self _dictionaryKeyForObserver:observer object:target keyPath:keyPath selector:selector];
-	@synchronized(self)
-	{
-		[_observerHelpers setObject:helper forKey:key];
-	}
+    dispatch_sync([MAKVONotificationCenter defaultQueue], ^{
+        [_observerHelpers setObject:helper forKey:key];
+    });
 	[helper release];
 }
 
 - (void)removeObserver:(id)observer object:(id)target keyPath:(NSString *)keyPath selector:(SEL)selector
 {
 	id key = [self _dictionaryKeyForObserver:observer object:target keyPath:keyPath selector:selector];
-	_MAKVONotificationHelper *helper = nil;
-	@synchronized(self)
-	{
+	__block _MAKVONotificationHelper *helper = nil;
+    dispatch_sync([MAKVONotificationCenter defaultQueue], ^{
 		helper = [[_observerHelpers objectForKey:key] retain];
 		[_observerHelpers removeObjectForKey:key];
-	}
+	});
 	[helper deregister];
 	[helper release];
 }

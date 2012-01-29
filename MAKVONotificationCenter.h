@@ -10,7 +10,9 @@
 
 @interface MAKVONotificationCenter : NSObject
 {
-	NSMutableDictionary*	_observerHelpers;
+	NSMutableDictionary* _observerHelpers;
+    dispatch_queue_t _observerHelperQueue;
+    dispatch_once_t _observerHelperQueueToken;
 }
 
 + (id)defaultCenter;

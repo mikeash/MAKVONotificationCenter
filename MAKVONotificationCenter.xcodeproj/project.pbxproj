@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FA0884F314E529D2001DDF7C /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FAEC6DA214875C66000587CA /* Foundation.framework */; };
+		FA0884F414E529D3001DDF7C /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FAEC6DA214875C66000587CA /* Foundation.framework */; };
 		FA3E685714E303F900DA720D /* MAKVONotificationCenter.m in Sources */ = {isa = PBXBuildFile; fileRef = C26362DA0EA6BDF00069A639 /* MAKVONotificationCenter.m */; };
-		FAEC6D6E148754C3000587CA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FAEC6D6D148754C3000587CA /* Cocoa.framework */; };
 		FAEC6D80148754C4000587CA /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FAEC6D7F148754C4000587CA /* SenTestingKit.framework */; };
-		FAEC6D81148754C4000587CA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FAEC6D6D148754C3000587CA /* Cocoa.framework */; };
 		FAEC6D84148754C4000587CA /* MAKVONotificationCenter-MacOS.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = FAEC6D6B148754C3000587CA /* MAKVONotificationCenter-MacOS.dylib */; };
 		FAEC6D8D148754C4000587CA /* Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = FAEC6D8C148754C4000587CA /* Tests.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		FAEC6D9514875538000587CA /* MAKVONotificationCenter.h in Headers */ = {isa = PBXBuildFile; fileRef = C26362D90EA6BDF00069A639 /* MAKVONotificationCenter.h */; };
@@ -46,7 +46,6 @@
 		C26362DA0EA6BDF00069A639 /* MAKVONotificationCenter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MAKVONotificationCenter.m; sourceTree = "<group>"; };
 		FA3E686814E3270D00DA720D /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		FAEC6D6B148754C3000587CA /* MAKVONotificationCenter-MacOS.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = "MAKVONotificationCenter-MacOS.dylib"; sourceTree = BUILT_PRODUCTS_DIR; };
-		FAEC6D6D148754C3000587CA /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		FAEC6D75148754C3000587CA /* Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Prefix.pch; sourceTree = "<group>"; };
 		FAEC6D7E148754C4000587CA /* MAKVONotificationCenter-MacOSTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MAKVONotificationCenter-MacOSTests.octest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAEC6D7F148754C4000587CA /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
@@ -64,7 +63,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FAEC6D6E148754C3000587CA /* Cocoa.framework in Frameworks */,
+				FA0884F414E529D3001DDF7C /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -73,8 +72,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				FAEC6D80148754C4000587CA /* SenTestingKit.framework in Frameworks */,
-				FAEC6D81148754C4000587CA /* Cocoa.framework in Frameworks */,
 				FAEC6D84148754C4000587CA /* MAKVONotificationCenter-MacOS.dylib in Frameworks */,
+				FA0884F314E529D2001DDF7C /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -124,7 +123,6 @@
 		08FB779DFE84155DC02AAC07 /* External Frameworks and Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				FAEC6D6D148754C3000587CA /* Cocoa.framework */,
 				FAEC6D7F148754C4000587CA /* SenTestingKit.framework */,
 				FAEC6DA214875C66000587CA /* Foundation.framework */,
 			);

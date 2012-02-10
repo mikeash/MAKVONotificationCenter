@@ -6,7 +6,6 @@
 //
 
 #import "MAKVONotificationCenter.h"
-#import <libkern/OSAtomic.h>
 #import <objc/message.h>
 #import <objc/runtime.h>
 
@@ -57,6 +56,7 @@ static const char			* const MAKVONotificationCenter_HelpersKey = "MAKVONotificat
   @public		// for MAKVONotificationCenter
     id							__weak _observer;
     id							__weak _target;
+    id							__unsafe_unretained _unsafeTarget;
     NSSet						*_keyPaths;
     NSKeyValueObservingOptions	_options;
     SEL							_selector;	// NULL for block-based
@@ -77,12 +77,13 @@ static char MAKVONotificationHelperMagicContext = 0;
 - (id)initWithObserver:(id)observer object:(id)target keyPaths:(NSSet *)keyPaths
               selector:(SEL)selector userInfo:(id)userInfo options:(NSKeyValueObservingOptions)options
 {
-    if ((self = [self init]))
+    if ((self = [super init]))
     {
         _observer = observer;
         _selector = selector;
         _userInfo = userInfo;
         _target = target;
+        _unsafeTarget = target;
         _keyPaths = keyPaths;
         _options = options;
         
@@ -132,8 +133,10 @@ static char MAKVONotificationHelperMagicContext = 0;
         {
             MAKVONotification		*notification = nil;
 
+            // Pass object instead of _target as the notification object so that
+            //	array observations will work as expected.
             if (!(_options & MAKeyValueObservingOptionNoInformation))
-                notification = [[MAKVONotification alloc] initWithObserver:_observer object:_target keyPath:keyPath change:change];
+                notification = [[MAKVONotification alloc] initWithObserver:_observer object:object keyPath:keyPath change:change];
             ((void (^)(MAKVONotification *))_userInfo)(notification);
         }
 #endif
@@ -146,21 +149,41 @@ static char MAKVONotificationHelperMagicContext = 0;
 
 - (void)deregister
 {
-    for (NSString *keyPath in _keyPaths)
-        [_target removeObserver:self forKeyPath:keyPath context:&MAKVONotificationHelperMagicContext];
+    // For auto-unregistered observations, the unsafe target is always
+    //	guaranteed to be valid. However, for manually unregistered ones, the
+    //	unsafe target can become invalid without warning, and we can only trust
+    //	the zeroing weak reference. If the ZWR is nil at this point, it's
+    //	impossible to remove the observation anyway; the target is already gone
+    //	and KVO has already thrown its own error. This is the behavior we want.
+    id			__unsafe_unretained checkedTarget = ((_options & MAKeyValueObservingOptionUnregisterManually) ? _target : _unsafeTarget);
+
+//NSLog(@"deregistering observer %@ target %@/%@ observation %@", _observer, _target, _unsafeTarget, self);
+    if ([checkedTarget isKindOfClass:[NSArray class]])
+    {
+        NSIndexSet		*idxSet = [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [checkedTarget count])];
+        
+        for (NSString *keyPath in _keyPaths)
+            [checkedTarget removeObserver:self fromObjectsAtIndexes:idxSet forKeyPath:keyPath context:&MAKVONotificationHelperMagicContext];
+    }
+    else
+    {
+        for (NSString *keyPath in _keyPaths)
+            [checkedTarget removeObserver:self forKeyPath:keyPath context:&MAKVONotificationHelperMagicContext];
+    }
     
     [objc_getAssociatedObject(_observer, MAKVONotificationCenter_HelpersKey) removeObject:self];
-    [objc_getAssociatedObject(_target, MAKVONotificationCenter_HelpersKey) removeObject:self];
+    [objc_getAssociatedObject(_target, MAKVONotificationCenter_HelpersKey) removeObject:self]; // if during dealloc, this will happen momentarily anyway
     
     // Protect against multiple invocations
     _observer = nil;
     _target = nil;
+    _unsafeTarget = nil;
     _keyPaths = nil;
 }
 
-- (BOOL)isValid
+- (BOOL)isValid	// the observation is invalid if and only if it has been deregistered
 {
-    return _observer && _target;
+    return _unsafeTarget != nil;
 }
 
 - (void)remove
@@ -243,16 +266,17 @@ static char MAKVONotificationHelperMagicContext = 0;
                            userInfo:(id)userInfo
                             options:(NSKeyValueObservingOptions)options;
 {
-    NSSet						*keyPaths = [[keyPath ma_keyPathsAsSetOfStrings] copy];
-    _MAKVONotificationHelper	*helper = [[_MAKVONotificationHelper alloc] initWithObserver:observer object:target keyPaths:keyPaths
-                                                                                    selector:selector userInfo:userInfo options:options];
-    
-    // RAIAIROFT: Resource Acquisition Is Allocation, Initialization, Registration, and Other Fun Tricks.
     if (!(options & MAKeyValueObservingOptionUnregisterManually))
     {
         [self _swizzleObjectClassIfNeeded:observer];
         [self _swizzleObjectClassIfNeeded:target];
     }
+
+    NSSet						*keyPaths = [[keyPath ma_keyPathsAsSetOfStrings] copy];
+    _MAKVONotificationHelper	*helper = [[_MAKVONotificationHelper alloc] initWithObserver:observer object:target keyPaths:keyPaths
+                                                                                    selector:selector userInfo:userInfo options:options];
+    
+    // RAIAIROFT: Resource Acquisition Is Allocation, Initialization, Registration, and Other Fun Tricks.
     return helper;
 }
 
@@ -262,10 +286,9 @@ static char MAKVONotificationHelperMagicContext = 0;
     
     @autoreleasepool
     {
-        NSMutableSet				*observerHelpers = objc_getAssociatedObject(observer, MAKVONotificationCenter_HelpersKey),
-                                    *targetHelpers = objc_getAssociatedObject(target, MAKVONotificationCenter_HelpersKey);
+        NSMutableSet				*observerHelpers = objc_getAssociatedObject(observer, MAKVONotificationCenter_HelpersKey) ?: [NSMutableSet set],
+                                    *targetHelpers = objc_getAssociatedObject(target, MAKVONotificationCenter_HelpersKey) ?: [NSMutableSet set];
         
-        // Don't have to worry about set mutations, as the -unionSet: creates a new set.
         for (_MAKVONotificationHelper *helper in [targetHelpers setByAddingObjectsFromSet:observerHelpers])
         {
             if ((!observer || helper->_observer == observer) &&
@@ -284,30 +307,37 @@ static char MAKVONotificationHelperMagicContext = 0;
     [observation remove];
 }
 
-static void			MAKVONotificationCenter_CustomDealloc(id self, SEL _cmd)
-{
-    [objc_getAssociatedObject(self, MAKVONotificationCenter_HelpersKey) removeAllObjects];
-
-    Method			originalDealloc = class_getInstanceMethod(object_getClass(self), @selector(MAKVONotificationCenter_KVO_original_dealloc));
-    
-//	class_replaceMethod(object_getClass(self), NSSelectorFromString(@"dealloc"), method_getImplementation(originalDealloc), method_getTypeEncoding(originalDealloc));
-NSLog(@"deallocating %@", self);
-    ((void (*)(id, SEL))method_getImplementation(originalDealloc))(self, _cmd);
-}
-
 - (void)_swizzleObjectClassIfNeeded:(id)object
 {
     @synchronized (_swizzledClasses)
     {
-        Class			class = object_getClass(object);//[object class];
-        
+        Class			class = [object class];//object_getClass(object);
+
         if ([_swizzledClasses containsObject:class])
             return;
-        
+//NSLog(@"Swizzling class %@", class);
         Method			dealloc = class_getInstanceMethod(class, NSSelectorFromString(@"dealloc")/*@selector(dealloc)*/);
-    
-        class_addMethod(class, @selector(MAKVONotificationCenter_KVO_original_dealloc), method_getImplementation(dealloc), method_getTypeEncoding(dealloc));
-        class_replaceMethod(class, NSSelectorFromString(@"dealloc"), (IMP)MAKVONotificationCenter_CustomDealloc, method_getTypeEncoding(dealloc));
+        IMP				origImpl = method_getImplementation(dealloc),
+                        newImpl = imp_implementationWithBlock((__bridge void *)^ (void *obj)
+        {
+//NSLog(@"Auto-deregistering any helpers (%@) on object %@ of class %@", objc_getAssociatedObject((__bridge id)obj, MAKVONotificationCenter_HelpersKey), obj, class);
+            @autoreleasepool
+            {
+                for (_MAKVONotificationHelper *observation in [objc_getAssociatedObject((__bridge id)obj, MAKVONotificationCenter_HelpersKey) copy])
+                {
+                    // It's necessary to check the option here, as a particular
+                    //	observation may want manual deregistration while others
+                    //	on objects of the same class (or even the same object)
+                    //	don't.
+                    if (!(observation->_options & MAKeyValueObservingOptionUnregisterManually))
+                        [observation deregister];
+                }
+            }
+            ((void (*)(void *, SEL))origImpl)(obj, NSSelectorFromString(@"dealloc"));
+        });
+        
+        class_replaceMethod(class, NSSelectorFromString(@"dealloc"), newImpl, method_getTypeEncoding(dealloc));
+        
         [_swizzledClasses addObject:class];
     }
 }

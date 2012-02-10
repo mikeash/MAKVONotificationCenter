@@ -10,30 +10,28 @@
 /******************************************************************************/
 enum
 {
-	// These constants are technically unsafe to use, as Apple could add options
-	//	with identical values in the future. I'm hoping the highest possible
-	//	bits are high enough for them not to bother with before a point in time
-	//	where it won't matter anymore. Only 32 bits are used, as the definition
-	//	of NSUInteger is 32 bits on iOS.
-	
-	// Pass this flag to disable automatic de-registration of observers at
-	//	dealloc-time of observer or target. This avoids some swizzling hackery
-	//	on the observer and target objects.
-	// WARNING: Because of the way MAKVONotificationCenter works, you will NOT
-	//	get a standard KVO exception when you forget to unregister observations;
-	//	you'll just crash at some point! Fixing this so that the exception is
-	//	thrown anyway would render this option moot, as its point is to allow
-	//	you to disable the runtime hackery that makes automatic de-registration
-	//	work.
-	MAKeyValueObservingOptionUnregisterManually		= 0x80000000,
-	
-	// Pass this flag to avoid the passing of MAKVONotification objects to
-	//	block-based observer callbacks. This saves an object allocation, at the
-	//	expense of making all the information in the object inaccessible. nil
-	//	will be passed as the parameter to the block. This is really only useful
-	//	if you expect to be getting a LOT of observations and you're worried
-	//	about memory usage and/or microbenchmark speed.
-	MAKeyValueObservingOptionNoInformation			= 0x40000000,
+    // These constants are technically unsafe to use, as Apple could add options
+    //	with identical values in the future. I'm hoping the highest possible
+    //	bits are high enough for them not to bother with before a point in time
+    //	where it won't matter anymore. Only 32 bits are used, as the definition
+    //	of NSUInteger is 32 bits on iOS.
+    
+    // Pass this flag to disable automatic de-registration of observers at
+    //	dealloc-time of observer or target. This avoids some swizzling hackery
+    //	on the observer and target objects.
+    // WARNING: Manual de-registration of observations has the same caveats as
+    //	stardard KVO - deallocating the target or observer objects without
+    //	removing the observation WILL throw KVO errors to the console and cause
+    //	crashes!
+    MAKeyValueObservingOptionUnregisterManually		= 0x80000000,
+    
+    // Pass this flag to avoid the passing of MAKVONotification objects to
+    //	block-based observer callbacks. This saves an object allocation, at the
+    //	expense of making all the information in the object inaccessible. nil
+    //	will be passed as the parameter to the block. This is really only useful
+    //	if you expect to be getting a LOT of observations and you're worried
+    //	about memory usage and/or microbenchmark speed.
+    MAKeyValueObservingOptionNoInformation			= 0x40000000,
 };
 
 /******************************************************************************/
@@ -76,35 +74,37 @@ enum
 //	valid, but will no longer be useful for anything (however, passing it to
 //	-removeObservation is harmless). It is strongly recommended that
 //	references to observation objects be weak (or nonexistent), as this will
-//	make automatic deregistration 100% leak-free.
+//	make automatic deregistration 100% leak-free. Holding on to an unretained
+//	(non-weak) reference will cause an observation to go invalid without warning
+//	unless automatic deregistration is disabled.
 // -addObserver:keyPath:selector:userInfo:options: is exactly identical to
 //	-observeTarget:keyPath:selector:userInfo:options: with the sender and target
 //	switched; which you use is a matter of preference.
 @interface NSObject (MAKVONotification)
 
 - (id<MAKVOObservation>)addObserver:(id)observer
-							keyPath:(id<MAKVOKeyPath>)keyPath
-						   selector:(SEL)selector
-						   userInfo:(id)userInfo
-							options:(NSKeyValueObservingOptions)options;
+                            keyPath:(id<MAKVOKeyPath>)keyPath
+                           selector:(SEL)selector
+                           userInfo:(id)userInfo
+                            options:(NSKeyValueObservingOptions)options;
 
 - (id<MAKVOObservation>)observeTarget:(id)target
-							  keyPath:(id<MAKVOKeyPath>)keyPath
-							 selector:(SEL)selector
-							 userInfo:(id)userInfo
-							  options:(NSKeyValueObservingOptions)options;
+                              keyPath:(id<MAKVOKeyPath>)keyPath
+                             selector:(SEL)selector
+                             userInfo:(id)userInfo
+                              options:(NSKeyValueObservingOptions)options;
 
 #if NS_BLOCKS_AVAILABLE
 
 - (id<MAKVOObservation>)addObserver:(id)observer
-							keyPath:(id<MAKVOKeyPath>)keyPath
-							options:(NSKeyValueObservingOptions)options
-							  block:(void (^)(MAKVONotification *notification))block;
+                            keyPath:(id<MAKVOKeyPath>)keyPath
+                            options:(NSKeyValueObservingOptions)options
+                              block:(void (^)(MAKVONotification *notification))block;
 
 - (id<MAKVOObservation>)observeTarget:(id)target
-							  keyPath:(id<MAKVOKeyPath>)keyPath
-							  options:(NSKeyValueObservingOptions)options
-								block:(void (^)(MAKVONotification *notification))block;
+                              keyPath:(id<MAKVOKeyPath>)keyPath
+                              options:(NSKeyValueObservingOptions)options
+                                block:(void (^)(MAKVONotification *notification))block;
 
 #endif
 
@@ -133,19 +133,19 @@ enum
 // If target is an NSArray, every object in the collection will be observed,
 //	per -addObserver:toObjectsAtIndexes:.
 - (id<MAKVOObservation>)addObserver:(id)observer
-							 object:(id)target
-							keyPath:(id<MAKVOKeyPath>)keyPath
-						   selector:(SEL)selector
-						   userInfo:(id)userInfo
-							options:(NSKeyValueObservingOptions)options;
+                             object:(id)target
+                            keyPath:(id<MAKVOKeyPath>)keyPath
+                           selector:(SEL)selector
+                           userInfo:(id)userInfo
+                            options:(NSKeyValueObservingOptions)options;
 
 #if NS_BLOCKS_AVAILABLE
 
 - (id<MAKVOObservation>)addObserver:(id)observer
-							 object:(id)target
-							keyPath:(id<MAKVOKeyPath>)keyPath
-							options:(NSKeyValueObservingOptions)options
-							  block:(void (^)(MAKVONotification *notification))block;
+                             object:(id)target
+                            keyPath:(id<MAKVOKeyPath>)keyPath
+                            options:(NSKeyValueObservingOptions)options
+                              block:(void (^)(MAKVONotification *notification))block;
 
 #endif
 

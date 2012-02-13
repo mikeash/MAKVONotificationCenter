@@ -523,4 +523,32 @@
         STAssertFalse(observation.isValid, @"Array target wasn't auto-deregistered on deallocation");
     }
 }
+
+- (void)testSelfObservation
+{
+    @autoreleasepool
+    {
+        TestObject					*object1 = [[[TestObject alloc] init] autorelease];
+        id<MAKVOObservation>		observation = nil;
+        BOOL						__block trigger = NO;
+        
+        observation = [object1 observeTarget:object1 keyPath:@"toggle" options:0 block:^ (MAKVONotification *notification) { trigger = !trigger; }];
+        object1.toggle = YES;
+        STAssertTrue(trigger, @"Trigger didn't fire or fired too many times.");
+        [observation remove];
+        trigger = NO;
+        object1.toggle = NO;
+        STAssertFalse(observation.isValid, @"Observation didn't go invalid.");
+        STAssertFalse(trigger, @"Trigger fired but shouldn't have.");
+        
+        @autoreleasepool
+        {
+            TestObject				*object2 = [[[TestObject alloc] init] autorelease];
+            
+            observation = [object2 addObserver:object2 keyPath:@"toggle" options:0 block:^ (MAKVONotification *notification) { }];
+        }
+        STAssertFalse(observation.isValid, @"Observation didn't automatically deregister.");
+    }
+}
+
 @end

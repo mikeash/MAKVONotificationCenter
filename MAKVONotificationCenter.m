@@ -100,16 +100,22 @@ static char MAKVONotificationHelperMagicContext = 0;
             else
                 [target addObserver:self forKeyPath:keyPath options:options context:&MAKVONotificationHelperMagicContext];
         }
-
-        NSMutableSet				*observerHelpers = objc_getAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey),
-                                    *targetHelpers = objc_getAssociatedObject(_target, &MAKVONotificationCenter_HelpersKey);
         
-        if (!observerHelpers)
-            objc_setAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey, observerHelpers = [NSMutableSet set], OBJC_ASSOCIATION_RETAIN);
-        [observerHelpers addObject:self];
-        if (!targetHelpers)
-            objc_setAssociatedObject(_target, &MAKVONotificationCenter_HelpersKey, targetHelpers = [NSMutableSet set], OBJC_ASSOCIATION_RETAIN);
-        [targetHelpers addObject:self];
+        NSMutableSet				*observerHelpers = nil, *targetHelpers = nil;
+        
+        @synchronized (_observer)
+        {
+            if (!(observerHelpers = objc_getAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey)))
+                objc_setAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey, observerHelpers = [NSMutableSet set], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+        @synchronized (observerHelpers) { [observerHelpers addObject:self]; }
+        
+        @synchronized (_target)
+        {
+            if (!(targetHelpers = objc_getAssociatedObject(_target, &MAKVONotificationCenter_HelpersKey)))
+                objc_setAssociatedObject(_target, &MAKVONotificationCenter_HelpersKey, targetHelpers = [NSMutableSet set], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+        @synchronized (targetHelpers) { [targetHelpers addObject:self]; }
     }
     return self;
 }
@@ -171,8 +177,11 @@ static char MAKVONotificationHelperMagicContext = 0;
             [checkedTarget removeObserver:self forKeyPath:keyPath context:&MAKVONotificationHelperMagicContext];
     }
     
-    [objc_getAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey) removeObject:self];
-    [objc_getAssociatedObject(_target, &MAKVONotificationCenter_HelpersKey) removeObject:self]; // if during dealloc, this will happen momentarily anyway
+    NSMutableSet			*observerHelpers = objc_getAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey),
+                            *targetHelpers = objc_getAssociatedObject(_target, &MAKVONotificationCenter_HelpersKey);
+    
+    @synchronized (observerHelpers) { [observerHelpers removeObject:self]; }
+    @synchronized (targetHelpers) { [targetHelpers removeObject:self]; } // if during dealloc, this will happen momentarily anyway
     
     // Protect against multiple invocations
     _observer = nil;
@@ -276,9 +285,13 @@ static char MAKVONotificationHelperMagicContext = 0;
     @autoreleasepool
     {
         NSMutableSet				*observerHelpers = objc_getAssociatedObject(observer, &MAKVONotificationCenter_HelpersKey) ?: [NSMutableSet set],
-                                    *targetHelpers = objc_getAssociatedObject(target, &MAKVONotificationCenter_HelpersKey) ?: [NSMutableSet set];
+                                    *targetHelpers = objc_getAssociatedObject(target, &MAKVONotificationCenter_HelpersKey) ?: [NSMutableSet set],
+                                    *allHelpers = [NSMutableSet set];
         
-        for (_MAKVONotificationHelper *helper in [targetHelpers setByAddingObjectsFromSet:observerHelpers])
+        @synchronized (observerHelpers) { [allHelpers unionSet:observerHelpers]; }
+        @synchronized (targetHelpers) { [allHelpers unionSet:targetHelpers]; }
+        
+        for (_MAKVONotificationHelper *helper in allHelpers)
         {
             if ((!observer || helper->_observer == observer) &&
                 (!target || helper->_target == target) &&

@@ -51,11 +51,11 @@
 @end
 
 /******************************************************************************/
-@interface TestKeyPaths : NSObject <MAKVOKeyPath>
+@interface TestKeyPaths : NSObject <MAKVOKeyPathSet>
 @end
 
 @implementation TestKeyPaths
-- (NSSet *)ma_keyPathsAsSetOfStrings { return [NSSet setWithObjects:@"toggle", @"toggle2", nil]; }
+- (id<NSFastEnumeration>)ma_keyPathsAsSetOfStrings { return [NSSet setWithObjects:@"toggle", @"toggle2", nil]; }
 @end
 
 /******************************************************************************/

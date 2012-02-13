@@ -45,12 +45,14 @@ enum
 @end
 
 /******************************************************************************/
-// An object adopting this protocol can be passed as a key path. Strings,
-//	arrays, sets, and ordered sets automatically get this support.
-@protocol MAKVOKeyPath <NSObject>
+// An object adopting this protocol can be passed as a key path, and every key
+//	path returned from the required method will be observed. Strings, arrays,
+//	sets, and ordered sets automatically get this support, as does anything else
+//	that can be used with for (... in ...)
+@protocol MAKVOKeyPathSet <NSObject>
 
 @required
-- (NSSet *)ma_keyPathsAsSetOfStrings;
+- (id<NSFastEnumeration>)ma_keyPathsAsSetOfStrings;
 
 @end
 
@@ -83,13 +85,13 @@ enum
 @interface NSObject (MAKVONotification)
 
 - (id<MAKVOObservation>)addObserver:(id)observer
-                            keyPath:(id<MAKVOKeyPath>)keyPath
+                            keyPath:(id<MAKVOKeyPathSet>)keyPath
                            selector:(SEL)selector
                            userInfo:(id)userInfo
                             options:(NSKeyValueObservingOptions)options;
 
 - (id<MAKVOObservation>)observeTarget:(id)target
-                              keyPath:(id<MAKVOKeyPath>)keyPath
+                              keyPath:(id<MAKVOKeyPathSet>)keyPath
                              selector:(SEL)selector
                              userInfo:(id)userInfo
                               options:(NSKeyValueObservingOptions)options;
@@ -97,12 +99,12 @@ enum
 #if NS_BLOCKS_AVAILABLE
 
 - (id<MAKVOObservation>)addObserver:(id)observer
-                            keyPath:(id<MAKVOKeyPath>)keyPath
+                            keyPath:(id<MAKVOKeyPathSet>)keyPath
                             options:(NSKeyValueObservingOptions)options
                               block:(void (^)(MAKVONotification *notification))block;
 
 - (id<MAKVOObservation>)observeTarget:(id)target
-                              keyPath:(id<MAKVOKeyPath>)keyPath
+                              keyPath:(id<MAKVOKeyPathSet>)keyPath
                               options:(NSKeyValueObservingOptions)options
                                 block:(void (^)(MAKVONotification *notification))block;
 
@@ -111,11 +113,11 @@ enum
 - (void)removeAllObservers;
 - (void)stopObservingAllTargets;
 
-- (void)removeObserver:(id)observer keyPath:(id<MAKVOKeyPath>)keyPath;
-- (void)stopObserving:(id)target keyPath:(id<MAKVOKeyPath>)keyPath;
+- (void)removeObserver:(id)observer keyPath:(id<MAKVOKeyPathSet>)keyPath;
+- (void)stopObserving:(id)target keyPath:(id<MAKVOKeyPathSet>)keyPath;
 
-- (void)removeObserver:(id)observer keyPath:(id<MAKVOKeyPath>)keyPath selector:(SEL)selector;
-- (void)stopObserving:(id)target keyPath:(id<MAKVOKeyPath>)keyPath selector:(SEL)selector;
+- (void)removeObserver:(id)observer keyPath:(id<MAKVOKeyPathSet>)keyPath selector:(SEL)selector;
+- (void)stopObserving:(id)target keyPath:(id<MAKVOKeyPathSet>)keyPath selector:(SEL)selector;
 
 @end
 
@@ -134,7 +136,7 @@ enum
 //	per -addObserver:toObjectsAtIndexes:.
 - (id<MAKVOObservation>)addObserver:(id)observer
                              object:(id)target
-                            keyPath:(id<MAKVOKeyPath>)keyPath
+                            keyPath:(id<MAKVOKeyPathSet>)keyPath
                            selector:(SEL)selector
                            userInfo:(id)userInfo
                             options:(NSKeyValueObservingOptions)options;
@@ -143,7 +145,7 @@ enum
 
 - (id<MAKVOObservation>)addObserver:(id)observer
                              object:(id)target
-                            keyPath:(id<MAKVOKeyPath>)keyPath
+                            keyPath:(id<MAKVOKeyPathSet>)keyPath
                             options:(NSKeyValueObservingOptions)options
                               block:(void (^)(MAKVONotification *notification))block;
 
@@ -153,7 +155,7 @@ enum
 //	selector. nil for any parameter is a wildcard. One of observer or target
 //	must be non-nil. The only way to deregister a specific block is to
 //	remove its particular MAKVOObservation.
-- (void)removeObserver:(id)observer object:(id)target keyPath:(id<MAKVOKeyPath>)keyPath selector:(SEL)selector;
+- (void)removeObserver:(id)observer object:(id)target keyPath:(id<MAKVOKeyPathSet>)keyPath selector:(SEL)selector;
 
 // remove specific registered observation
 - (void)removeObservation:(id<MAKVOObservation>)observation;
@@ -164,11 +166,11 @@ enum
 // Declarations to make the basic objects work as key paths; these are
 //	technically private, but need to be publically visible or the compiler will
 //	complain.
-@interface NSString (MAKeyPath) <MAKVOKeyPath>
+@interface NSString (MAKeyPath) <MAKVOKeyPathSet>
 @end
-@interface NSArray (MAKeyPath) <MAKVOKeyPath>
+@interface NSArray (MAKeyPath) <MAKVOKeyPathSet>
 @end
-@interface NSSet (MAKeyPath) <MAKVOKeyPath>
+@interface NSSet (MAKeyPath) <MAKVOKeyPathSet>
 @end
-@interface NSOrderedSet (MAKeyPath) <MAKVOKeyPath>
+@interface NSOrderedSet (MAKeyPath) <MAKVOKeyPathSet>
 @end

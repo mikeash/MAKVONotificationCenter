@@ -10,6 +10,11 @@
 #import <objc/runtime.h>
 
 /******************************************************************************/
+#if !__has_feature(objc_arc)	// Foundation already predefines __has_feature()
+#error "MAKVONotificationCenter is designed to be built with ARC and will not work otherwise. Clients of it do not have to use ARC."
+#endif
+
+/******************************************************************************/
 static const char			* const MAKVONotificationCenter_HelpersKey = "MAKVONotificationCenter_helpers";
 
 static NSMutableSet			*MAKVONotificationCenter_swizzledClasses = nil;

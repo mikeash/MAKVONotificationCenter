@@ -1,0 +1,6 @@
+//
+// Prefix header for all source files of the 'MAKVONotificationCenter' project
+//
+
+#import <Availability.h>
+#import <Foundation/Foundation.h>

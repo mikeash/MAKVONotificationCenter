@@ -101,14 +101,14 @@ static char MAKVONotificationHelperMagicContext = 0;
                 [target addObserver:self forKeyPath:keyPath options:options context:&MAKVONotificationHelperMagicContext];
         }
 
-        NSMutableSet				*observerHelpers = objc_getAssociatedObject(_observer, MAKVONotificationCenter_HelpersKey),
-                                    *targetHelpers = objc_getAssociatedObject(_target, MAKVONotificationCenter_HelpersKey);
+        NSMutableSet				*observerHelpers = objc_getAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey),
+                                    *targetHelpers = objc_getAssociatedObject(_target, &MAKVONotificationCenter_HelpersKey);
         
         if (!observerHelpers)
-            objc_setAssociatedObject(_observer, MAKVONotificationCenter_HelpersKey, observerHelpers = [NSMutableSet set], OBJC_ASSOCIATION_RETAIN);
+            objc_setAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey, observerHelpers = [NSMutableSet set], OBJC_ASSOCIATION_RETAIN);
         [observerHelpers addObject:self];
         if (!targetHelpers)
-            objc_setAssociatedObject(_target, MAKVONotificationCenter_HelpersKey, targetHelpers = [NSMutableSet set], OBJC_ASSOCIATION_RETAIN);
+            objc_setAssociatedObject(_target, &MAKVONotificationCenter_HelpersKey, targetHelpers = [NSMutableSet set], OBJC_ASSOCIATION_RETAIN);
         [targetHelpers addObject:self];
     }
     return self;
@@ -171,8 +171,8 @@ static char MAKVONotificationHelperMagicContext = 0;
             [checkedTarget removeObserver:self forKeyPath:keyPath context:&MAKVONotificationHelperMagicContext];
     }
     
-    [objc_getAssociatedObject(_observer, MAKVONotificationCenter_HelpersKey) removeObject:self];
-    [objc_getAssociatedObject(_target, MAKVONotificationCenter_HelpersKey) removeObject:self]; // if during dealloc, this will happen momentarily anyway
+    [objc_getAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey) removeObject:self];
+    [objc_getAssociatedObject(_target, &MAKVONotificationCenter_HelpersKey) removeObject:self]; // if during dealloc, this will happen momentarily anyway
     
     // Protect against multiple invocations
     _observer = nil;
@@ -275,8 +275,8 @@ static char MAKVONotificationHelperMagicContext = 0;
     
     @autoreleasepool
     {
-        NSMutableSet				*observerHelpers = objc_getAssociatedObject(observer, MAKVONotificationCenter_HelpersKey) ?: [NSMutableSet set],
-                                    *targetHelpers = objc_getAssociatedObject(target, MAKVONotificationCenter_HelpersKey) ?: [NSMutableSet set];
+        NSMutableSet				*observerHelpers = objc_getAssociatedObject(observer, &MAKVONotificationCenter_HelpersKey) ?: [NSMutableSet set],
+                                    *targetHelpers = objc_getAssociatedObject(target, &MAKVONotificationCenter_HelpersKey) ?: [NSMutableSet set];
         
         for (_MAKVONotificationHelper *helper in [targetHelpers setByAddingObjectsFromSet:observerHelpers])
         {
@@ -309,10 +309,10 @@ static char MAKVONotificationHelperMagicContext = 0;
         IMP				origImpl = method_getImplementation(dealloc),
                         newImpl = imp_implementationWithBlock((__bridge void *)^ (void *obj)
         {
-//NSLog(@"Auto-deregistering any helpers (%@) on object %@ of class %@", objc_getAssociatedObject((__bridge id)obj, MAKVONotificationCenter_HelpersKey), obj, class);
+//NSLog(@"Auto-deregistering any helpers (%@) on object %@ of class %@", objc_getAssociatedObject((__bridge id)obj, &MAKVONotificationCenter_HelpersKey), obj, class);
             @autoreleasepool
             {
-                for (_MAKVONotificationHelper *observation in [objc_getAssociatedObject((__bridge id)obj, MAKVONotificationCenter_HelpersKey) copy])
+                for (_MAKVONotificationHelper *observation in [objc_getAssociatedObject((__bridge id)obj, &MAKVONotificationCenter_HelpersKey) copy])
                 {
                     // It's necessary to check the option here, as a particular
                     //	observation may want manual deregistration while others

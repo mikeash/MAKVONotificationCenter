@@ -196,17 +196,6 @@ static char MAKVONotificationHelperMagicContext = 0;
     [self deregister];
 }
 
-- (NSUInteger)hash
-{
-    // userInfo is NOT involved in hash
-    return [_observer hash] ^ [_target hash] ^ [_keyPaths hash] ^ _options ^ (NSUInteger)_selector;
-}
-
-- (BOOL)isEqual:(id)object
-{
-    return object == self;	// Identity is the only equality.
-}
-
 @end
 
 /******************************************************************************/

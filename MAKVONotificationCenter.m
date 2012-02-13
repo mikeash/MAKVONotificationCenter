@@ -12,6 +12,8 @@
 /******************************************************************************/
 static const char			* const MAKVONotificationCenter_HelpersKey = "MAKVONotificationCenter_helpers";
 
+static NSMutableSet			*MAKVONotificationCenter_swizzledClasses = nil;
+
 /******************************************************************************/
 @interface MAKVONotification ()
 {
@@ -209,15 +211,19 @@ static char MAKVONotificationHelperMagicContext = 0;
 
 /******************************************************************************/
 @interface MAKVONotificationCenter ()
-{
-    NSMutableSet			*_swizzledClasses;
-}
 
 - (void)_swizzleObjectClassIfNeeded:(id)object;
 
 @end
 
 @implementation MAKVONotificationCenter
+
++ (void)initialize
+{
+    static dispatch_once_t				onceToken = 0;
+    
+    dispatch_once(&onceToken, ^ { MAKVONotificationCenter_swizzledClasses = [NSMutableSet set]; });
+}
 
 + (id)defaultCenter
 {
@@ -233,15 +239,6 @@ static char MAKVONotificationHelperMagicContext = 0;
         center = [[MAKVONotificationCenter alloc] init];
     });
     return center;
-}
-
-- (id)init
-{
-    if ((self = [super init]))
-    {
-        _swizzledClasses = [[NSMutableSet alloc] init];
-    }
-    return self;
 }
 
 #if NS_BLOCKS_AVAILABLE
@@ -311,11 +308,11 @@ static char MAKVONotificationHelperMagicContext = 0;
 
 - (void)_swizzleObjectClassIfNeeded:(id)object
 {
-    @synchronized (_swizzledClasses)
+    @synchronized (MAKVONotificationCenter_swizzledClasses)
     {
         Class			class = [object class];//object_getClass(object);
 
-        if ([_swizzledClasses containsObject:class])
+        if ([MAKVONotificationCenter_swizzledClasses containsObject:class])
             return;
 //NSLog(@"Swizzling class %@", class);
         Method			dealloc = class_getInstanceMethod(class, NSSelectorFromString(@"dealloc")/*@selector(dealloc)*/);
@@ -340,7 +337,7 @@ static char MAKVONotificationHelperMagicContext = 0;
         
         class_replaceMethod(class, NSSelectorFromString(@"dealloc"), newImpl, method_getTypeEncoding(dealloc));
         
-        [_swizzledClasses addObject:class];
+        [MAKVONotificationCenter_swizzledClasses addObject:class];
     }
 }
 

@@ -60,7 +60,7 @@ enum
 @interface MAKVONotification : NSObject
 
 @property(copy,readonly)	NSString			*keyPath;
-@property(weak,readonly)	id					observer, target;
+@property(assign,readonly)	id					observer, target;
 @property(assign,readonly)	NSKeyValueChange	kind;
 @property(strong,readonly)	id					oldValue, newValue;
 @property(strong,readonly)	NSIndexSet			*indexes;
@@ -97,6 +97,10 @@ enum
                               options:(NSKeyValueObservingOptions)options;
 
 #if NS_BLOCKS_AVAILABLE
+
+- (id<MAKVOObservation>)addObservationKeyPath:(id<MAKVOKeyPathSet>)keyPath
+                                      options:(NSKeyValueObservingOptions)options
+                                        block:(void (^)(MAKVONotification *notification))block;
 
 - (id<MAKVOObservation>)addObserver:(id)observer
                             keyPath:(id<MAKVOKeyPathSet>)keyPath

@@ -107,13 +107,14 @@ static char MAKVONotificationHelperMagicContext = 0;
         }
         
         NSMutableSet				*observerHelpers = nil, *targetHelpers = nil;
-        
-        @synchronized (_observer)
-        {
-            if (!(observerHelpers = objc_getAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey)))
-                objc_setAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey, observerHelpers = [NSMutableSet set], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        if (_observer) {
+            @synchronized (_observer)
+            {
+                if (!(observerHelpers = objc_getAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey)))
+                    objc_setAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey, observerHelpers = [NSMutableSet set], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            }
+            @synchronized (observerHelpers) { [observerHelpers addObject:self]; }
         }
-        @synchronized (observerHelpers) { [observerHelpers addObject:self]; }
         
         @synchronized (_target)
         {
@@ -175,11 +176,13 @@ static char MAKVONotificationHelperMagicContext = 0;
         for (NSString *keyPath in _keyPaths)
             [_target removeObserver:self forKeyPath:keyPath context:&MAKVONotificationHelperMagicContext];
     }
+    if (_observer) {
+        NSMutableSet			*observerHelpers = objc_getAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey);
+        @synchronized (observerHelpers) { [observerHelpers removeObject:self]; }
+    }
+    NSMutableSet			*targetHelpers = objc_getAssociatedObject(_target, &MAKVONotificationCenter_HelpersKey);
     
-    NSMutableSet			*observerHelpers = objc_getAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey),
-                            *targetHelpers = objc_getAssociatedObject(_target, &MAKVONotificationCenter_HelpersKey);
-    
-    @synchronized (observerHelpers) { [observerHelpers removeObject:self]; }
+
     @synchronized (targetHelpers) { [targetHelpers removeObject:self]; } // if during dealloc, this will happen momentarily anyway
     
     // Protect against multiple invocations
@@ -311,6 +314,8 @@ static char MAKVONotificationHelperMagicContext = 0;
 
 - (void)_swizzleObjectClassIfNeeded:(id)object
 {
+    if (!object)
+        return;
     @synchronized (MAKVONotificationCenter_swizzledClasses)
     {
         Class			class = [object class];//object_getClass(object);
@@ -363,6 +368,13 @@ static char MAKVONotificationHelperMagicContext = 0;
 }
 
 #if NS_BLOCKS_AVAILABLE
+
+- (id<MAKVOObservation>)addObservationKeyPath:(id<MAKVOKeyPathSet>)keyPath
+                                      options:(NSKeyValueObservingOptions)options
+                                        block:(void (^)(MAKVONotification *notification))block
+{
+    return [[MAKVONotificationCenter defaultCenter] addObserver:nil object:self keyPath:keyPath options:options block:block];
+}
 
 - (id<MAKVOObservation>)addObserver:(id)observer keyPath:(id<MAKVOKeyPathSet>)keyPath options:(NSKeyValueObservingOptions)options
                               block:(void (^)(MAKVONotification *notification))block

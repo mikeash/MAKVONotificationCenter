@@ -98,6 +98,10 @@ enum
 
 #if NS_BLOCKS_AVAILABLE
 
+- (id<MAKVOObservation>)addObservationKeyPath:(id<MAKVOKeyPathSet>)keyPath
+                                      options:(NSKeyValueObservingOptions)options
+                                        block:(void (^)(MAKVONotification *notification))block;
+
 - (id<MAKVOObservation>)addObserver:(id)observer
                             keyPath:(id<MAKVOKeyPathSet>)keyPath
                             options:(NSKeyValueObservingOptions)options

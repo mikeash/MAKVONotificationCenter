@@ -60,7 +60,7 @@ enum
 @interface MAKVONotification : NSObject
 
 @property(copy,readonly)	NSString			*keyPath;
-@property(weak,readonly)	id					observer, target;
+@property(assign,readonly)	id					observer, target;
 @property(assign,readonly)	NSKeyValueChange	kind;
 @property(strong,readonly)	id					oldValue, newValue;
 @property(strong,readonly)	NSIndexSet			*indexes;

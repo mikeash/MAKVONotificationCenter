@@ -251,14 +251,6 @@
             STAssertEqualObjects(notification.newValue, [NSNumber numberWithBool:YES], @"Expected new value to be YES, got %@", notification.newValue);
             STAssertFalse(notification.isPrior, @"Expected prior flag to be NO, it wasn't.");
         }];
-        [observation remove];
-
-        /*observation = */[observer observeTarget:target keyPath:@"toggle"
-                                options:MAKeyValueObservingOptionNoInformation | NSKeyValueObservingOptionInitial
-                                block:
-        ^ (MAKVONotification *notification) {
-            STAssertNil(notification, @"Got a notification where none was expected");
-        }];
 //		[observation remove];	// unnecessary!
     }
 }
@@ -545,8 +537,9 @@
         {
             TestObject				*object2 = [[[TestObject alloc] init] autorelease];
             
-            observation = [object2 addObserver:object2 keyPath:@"toggle" options:0 block:^ (MAKVONotification *notification) { }];
+            observation = [[object2 addObserver:object2 keyPath:@"toggle" options:0 block:^ (MAKVONotification *notification) { }] retain];
         }
+        [observation autorelease];
         STAssertFalse(observation.isValid, @"Observation didn't automatically deregister.");
     }
 }

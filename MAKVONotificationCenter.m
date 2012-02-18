@@ -93,7 +93,7 @@ static char MAKVONotificationHelperMagicContext = 0;
         _options = options;
         
         // Pass only Apple's options to Apple's code.
-        options &= ~(MAKeyValueObservingOptionUnregisterManually | MAKeyValueObservingOptionNoInformation);
+        options &= ~(MAKeyValueObservingOptionUnregisterManually);
         
         for (NSString *keyPath in _keyPaths)
         {
@@ -142,8 +142,7 @@ static char MAKVONotificationHelperMagicContext = 0;
 
             // Pass object instead of _target as the notification object so that
             //	array observations will work as expected.
-            if (!(_options & MAKeyValueObservingOptionNoInformation))
-                notification = [[MAKVONotification alloc] initWithObserver:_observer object:object keyPath:keyPath change:change];
+            notification = [[MAKVONotification alloc] initWithObserver:_observer object:object keyPath:keyPath change:change];
             ((void (^)(MAKVONotification *))_userInfo)(notification);
         }
 #endif

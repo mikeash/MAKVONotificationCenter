@@ -24,14 +24,6 @@ enum
     //	removing the observation WILL throw KVO errors to the console and cause
     //	crashes!
     MAKeyValueObservingOptionUnregisterManually		= 0x80000000,
-    
-    // Pass this flag to avoid the passing of MAKVONotification objects to
-    //	block-based observer callbacks. This saves an object allocation, at the
-    //	expense of making all the information in the object inaccessible. nil
-    //	will be passed as the parameter to the block. This is really only useful
-    //	if you expect to be getting a LOT of observations and you're worried
-    //	about memory usage and/or microbenchmark speed.
-    MAKeyValueObservingOptionNoInformation			= 0x40000000,
 };
 
 /******************************************************************************/

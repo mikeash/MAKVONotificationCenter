@@ -155,13 +155,6 @@ static char MAKVONotificationHelperMagicContext = 0;
 
 - (void)deregister
 {
-    // For auto-unregistered observations, the unsafe target is always
-    //	guaranteed to be valid. However, for manually unregistered ones, the
-    //	unsafe target can become invalid without warning, and we can only trust
-    //	the zeroing weak reference. If the ZWR is nil at this point, it's
-    //	impossible to remove the observation anyway; the target is already gone
-    //	and KVO has already thrown its own error. This is the behavior we want.
-
     //NSLog(@"deregistering observer %@ target %@ observation %@", _observer, _target, self);
     if ([_target isKindOfClass:[NSArray class]])
     {
@@ -175,7 +168,9 @@ static char MAKVONotificationHelperMagicContext = 0;
         for (NSString *keyPath in _keyPaths)
             [_target removeObserver:self forKeyPath:keyPath context:&MAKVONotificationHelperMagicContext];
     }
-    if (_observer) {
+
+    if (_observer)
+    {
         NSMutableSet			*observerHelpers = objc_getAssociatedObject(_observer, &MAKVONotificationCenter_HelpersKey);
         @synchronized (observerHelpers) { [observerHelpers removeObject:self]; }
     }
@@ -196,11 +191,6 @@ static char MAKVONotificationHelperMagicContext = 0;
 }
 
 - (void)remove
-{
-    [self deregister];
-}
-
-- (void)dealloc
 {
     [self deregister];
 }

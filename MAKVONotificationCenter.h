@@ -168,5 +168,7 @@ enum
 @end
 @interface NSSet (MAKeyPath) <MAKVOKeyPathSet>
 @end
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_5_0 || __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_7
 @interface NSOrderedSet (MAKeyPath) <MAKVOKeyPathSet>
 @end
+#endif

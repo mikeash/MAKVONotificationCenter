@@ -99,7 +99,7 @@ static char MAKVONotificationHelperMagicContext = 0;
         {
             if ([target isKindOfClass:[NSArray class]])
             {
-                [target addObserver:self toObjectsAtIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [target count])]
+                [target addObserver:self toObjectsAtIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [(NSArray *)target count])]
                          forKeyPath:keyPath options:options context:&MAKVONotificationHelperMagicContext];
             }
             else
@@ -158,7 +158,7 @@ static char MAKVONotificationHelperMagicContext = 0;
     //NSLog(@"deregistering observer %@ target %@ observation %@", _observer, _target, self);
     if ([_target isKindOfClass:[NSArray class]])
     {
-        NSIndexSet		*idxSet = [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [_target count])];
+        NSIndexSet		*idxSet = [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [(NSArray *)_target count])];
         
         for (NSString *keyPath in _keyPaths)
             [_target removeObserver:self fromObjectsAtIndexes:idxSet forKeyPath:keyPath context:&MAKVONotificationHelperMagicContext];

@@ -161,12 +161,20 @@ static char MAKVONotificationHelperMagicContext = 0;
         NSIndexSet		*idxSet = [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [(NSArray *)_target count])];
         
         for (NSString *keyPath in _keyPaths)
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_5_0 || __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_7
             [_target removeObserver:self fromObjectsAtIndexes:idxSet forKeyPath:keyPath context:&MAKVONotificationHelperMagicContext];
+#else
+            [_target removeObserver:self fromObjectsAtIndexes:idxSet forKeyPath:keyPath];
+#endif
     }
     else
     {
         for (NSString *keyPath in _keyPaths)
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_5_0 || __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_7
             [_target removeObserver:self forKeyPath:keyPath context:&MAKVONotificationHelperMagicContext];
+#else
+            [_target removeObserver:self forKeyPath:keyPath];
+#endif
     }
 
     if (_observer)
@@ -439,6 +447,7 @@ static char MAKVONotificationHelperMagicContext = 0;
 
 @end
 
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_5_0 || __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_7
 @implementation NSOrderedSet (MAKeyPath)
 
 - (id<NSFastEnumeration>)ma_keyPathsAsSetOfStrings
@@ -447,3 +456,4 @@ static char MAKVONotificationHelperMagicContext = 0;
 }
 
 @end
+#endif

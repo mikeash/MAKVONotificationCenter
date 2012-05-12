@@ -54,7 +54,8 @@ enum
 @property(copy,readonly)	NSString			*keyPath;
 @property(assign,readonly)	id					observer, target;
 @property(assign,readonly)	NSKeyValueChange	kind;
-@property(strong,readonly)	id					oldValue, newValue;
+@property(strong,readonly)	id					oldValue;
+@property(strong,readonly)	id __attribute__((ns_returns_not_retained)) newValue;
 @property(strong,readonly)	NSIndexSet			*indexes;
 @property(assign,readonly)	BOOL				isPrior;
 

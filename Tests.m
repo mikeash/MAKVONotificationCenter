@@ -59,6 +59,19 @@
 @end
 
 /******************************************************************************/
+@interface DeallocTesterSuperclass : NSObject
+@end
+@implementation DeallocTesterSuperclass
+- (void)dealloc { [super dealloc]; }
+@end
+
+@interface DeallocTesterSubclass : DeallocTesterSuperclass
+@end
+@implementation DeallocTesterSubclass
+- (void)dealloc { [super dealloc]; }
+@end
+
+/******************************************************************************/
 @interface MAKVONotificationCenter_Tests ()
 @end
 
@@ -541,6 +554,21 @@
         }
         [observation autorelease];
         STAssertFalse(observation.isValid, @"Observation didn't automatically deregister.");
+    }
+}
+
+- (void)testMultipleDeallocSwizzleInHierarchy
+{
+    NSMutableArray *observations = [NSMutableArray array];
+    @autoreleasepool {
+        TestObject *object = [[[TestObject alloc] init] autorelease];
+        DeallocTesterSuperclass *observer1 = [[[DeallocTesterSuperclass alloc] init] autorelease];
+        DeallocTesterSubclass *observer2 = [[[DeallocTesterSubclass alloc] init] autorelease];
+        
+        [observations addObject: [object addObserver:observer1 keyPath:@"self" options:0
+                                                block:^(MAKVONotification *notification) {}]];
+        [observations addObject: [object addObserver:observer2 keyPath:@"self" options:0
+                                                block:^(MAKVONotification *notification) {}]];
     }
 }
 

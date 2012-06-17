@@ -323,23 +323,28 @@ static char MAKVONotificationHelperMagicContext = 0;
         SEL				deallocSel = NSSelectorFromString(@"dealloc");/*@selector(dealloc)*/
         Method			dealloc = class_getInstanceMethod(class, deallocSel);
         IMP				origImpl = method_getImplementation(dealloc),
-        newImpl = imp_implementationWithBlock((__bridge id)((__bridge void *)^ (void *obj)
-                                                            {
-                                                                //NSLog(@"Auto-deregistering any helpers (%@) on object %@ of class %@", objc_getAssociatedObject((__bridge id)obj, &MAKVONotificationCenter_HelpersKey), obj, class);
-                                                                @autoreleasepool
-                                                                {
-                                                                    for (_MAKVONotificationHelper *observation in [objc_getAssociatedObject((__bridge id)obj, &MAKVONotificationCenter_HelpersKey) copy])
-                                                                    {
-                                                                        // It's necessary to check the option here, as a particular
-                                                                        //	observation may want manual deregistration while others
-                                                                        //	on objects of the same class (or even the same object)
-                                                                        //	don't.
-                                                                        if (!(observation->_options & MAKeyValueObservingOptionUnregisterManually))
-                                                                            [observation deregister];
-                                                                    }
-                                                                }
-                                                                ((void (*)(void *, SEL))origImpl)(obj, deallocSel);
-                                                            }));
+        #if __IPHONE_OS_VERSION_MAX_ALLOWED < __IPHONE_6_0 || __MAC_OS_X_VERSION_MAX_ALLOWED < __MAC_10_8
+                        newImpl = imp_implementationWithBlock(^ (void *obj)
+        #else
+                        newImpl = imp_implementationWithBlock((__bridge void *)^ (void *obj)
+        #endif
+                                                              
+        {
+//NSLog(@"Auto-deregistering any helpers (%@) on object %@ of class %@", objc_getAssociatedObject((__bridge id)obj, &MAKVONotificationCenter_HelpersKey), obj, class);
+            @autoreleasepool
+            {
+                for (_MAKVONotificationHelper *observation in [objc_getAssociatedObject((__bridge id)obj, &MAKVONotificationCenter_HelpersKey) copy])
+                {
+                    // It's necessary to check the option here, as a particular
+                    //	observation may want manual deregistration while others
+                    //	on objects of the same class (or even the same object)
+                    //	don't.
+                    if (!(observation->_options & MAKeyValueObservingOptionUnregisterManually))
+                        [observation deregister];
+                }
+            }
+            ((void (*)(void *, SEL))origImpl)(obj, deallocSel);
+        });
         
         class_replaceMethod(class, deallocSel, newImpl, method_getTypeEncoding(dealloc));
         

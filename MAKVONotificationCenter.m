@@ -25,7 +25,7 @@ static NSMutableSet			*MAKVONotificationCenter_swizzledClasses = nil;
     NSDictionary			*change;
 }
 
-- (id)initWithObserver:(id)observer_ object:(id)target_ keyPath:(NSString *)keyPath_ change:(NSDictionary *)change_;
+- (id)initWithObserver:(id)observer_ object:(id)target_ keyPath:(NSString *)keyPath_ change:(NSDictionary *)change_ helper:(id<MAKVOObservation>)helper;
 
 @property(copy,readwrite)	NSString			*keyPath;
 @property(assign,readwrite)	id					observer, target;
@@ -37,7 +37,7 @@ static NSMutableSet			*MAKVONotificationCenter_swizzledClasses = nil;
 
 @synthesize keyPath, observer, target;
 
-- (id)initWithObserver:(id)observer_ object:(id)target_ keyPath:(NSString *)keyPath_ change:(NSDictionary *)change_
+- (id)initWithObserver:(id)observer_ object:(id)target_ keyPath:(NSString *)keyPath_ change:(NSDictionary *)change_ helper:(id<MAKVOObservation>)helper
 {
     if ((self = [super init]))
     {
@@ -45,6 +45,7 @@ static NSMutableSet			*MAKVONotificationCenter_swizzledClasses = nil;
         self.target = target_;
         self.keyPath = keyPath_;
         change = change_;
+      _observation = helper;
     }
     return self;
 }
@@ -142,7 +143,7 @@ static char MAKVONotificationHelperMagicContext = 0;
 
             // Pass object instead of _target as the notification object so that
             //	array observations will work as expected.
-            notification = [[MAKVONotification alloc] initWithObserver:_observer object:object keyPath:keyPath change:change];
+            notification = [[MAKVONotification alloc] initWithObserver:_observer object:object keyPath:keyPath change:change helper:self];
             ((void (^)(MAKVONotification *))_userInfo)(notification);
         }
 #endif

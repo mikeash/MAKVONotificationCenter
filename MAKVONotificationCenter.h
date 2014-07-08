@@ -58,6 +58,7 @@ enum
 @property(strong,readonly)	id __attribute__((ns_returns_not_retained)) newValue;
 @property(strong,readonly)	NSIndexSet			*indexes;
 @property(assign,readonly)	BOOL				isPrior;
+@property(assign, readonly) id<MAKVOObservation>  observation;
 
 @end
 

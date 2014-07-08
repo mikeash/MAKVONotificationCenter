@@ -191,6 +191,7 @@ static char MAKVONotificationHelperMagicContext = 0;
     _observer = nil;
     _target = nil;
     _keyPaths = nil;
+    _userInfo = nil;
 }
 
 - (BOOL)isValid	// the observation is invalid if and only if it has been deregistered
